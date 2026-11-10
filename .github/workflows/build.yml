@@ -28,8 +28,7 @@ on:
 
 env:
   HAXE_VERSION: 4.3.6
-  PROJECT_NAME: ADR-Engine-Reworked
-  ENGINE_VERSION: 0.0.1
+  PROJECT_NAME: H-Slice
 
 jobs:
   build:
@@ -86,27 +85,38 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_arm64
           haxelib run lime config ANDROID_SETUP true
 
+      - name: Repair Haxelib repository metadata
+        run: haxelib fixrepo
+
+      - name: Set up Python for dependency compatibility patch
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Patch FlxAnimate for HaxeFlixel 6.x
+        run: python .github/scripts/patch_flxanimate.py
+
       - name: Compile
-        run: haxelib run lime build ${{ inputs.buildArgs }} --app-version="${{ env.ENGINE_VERSION }}"
+        run: haxelib run lime build ${{ inputs.buildArgs }}
 
       # are you sure is this okay to comment out bro
       # - name: Sign APK with the proper key
       #   if: inputs.exportPath == 'android'
       #   env:
       #     OUT_DIR: ./export/release/android/bin/app/build/outputs/apk/release/
-      #     SIGNING_KEY: ${{ secrets.ADR_ENGINE_SIGNING_PASSWORD }}
-      #     SIGNING_ALIAS: adrengine
-      #     SIGNING_FILE: ${{ secrets.ADR_ENGINE_SIGNING_KEYSTORE }}
+      #     SIGNING_KEY: ${{ secrets.HRK_EXEX_PASSWORD }}
+      #     SIGNING_ALIAS: hslice
+      #     SIGNING_FILE: ${{ secrets.HRK_EXEX_KEYSTORE }}
       #   run: |
-      #     rm -f ./adrengine.keystore;
-      #     echo $SIGNING_FILE | base64 -d > ./adrengine.keystore;
-      #     sha256sum ./adrengine.keystore;
+      #     rm -f ./hslice.keystore;
+      #     echo $SIGNING_FILE | base64 -d > ./hslice.keystore;
+      #     sha256sum ./hslice.keystore;
 
-      #     mv '${{env.OUT_DIR}}ADR Engine Reworked-release.apk' '${{env.OUT_DIR}}ADR Engine Reworked-unsigned.apk';
-      #     $ANDROID_HOME/build-tools/35.0.1/zipalign -P 16 -f -v 4 '${{env.OUT_DIR}}ADR Engine Reworked-unsigned.apk' '${{env.OUT_DIR}}ADR Engine Reworked-release.apk' > /dev/null;
+      #     mv '${{env.OUT_DIR}}H-Slice-release.apk' '${{env.OUT_DIR}}H-Slice-unsigned.apk';
+      #     $ANDROID_HOME/build-tools/35.0.1/zipalign -P 16 -f -v 4 '${{env.OUT_DIR}}H-Slice-unsigned.apk' '${{env.OUT_DIR}}H-Slice-release.apk' > /dev/null;
 
-      #     $ANDROID_HOME/build-tools/35.0.1/apksigner sign --ks adrengine.keystore --ks-key-alias $SIGNING_ALIAS --ks-pass "env:SIGNING_KEY" --key-pass "env:SIGNING_KEY" '${{env.OUT_DIR}}ADR Engine Reworked-release.apk';
-      #     rm '${{env.OUT_DIR}}ADR Engine Reworked-unsigned.apk';
+      #     $ANDROID_HOME/build-tools/35.0.1/apksigner sign --ks hslice.keystore --ks-key-alias $SIGNING_ALIAS --ks-pass "env:SIGNING_KEY" --key-pass "env:SIGNING_KEY" '${{env.OUT_DIR}}H-Slice-release.apk';
+      #     rm '${{env.OUT_DIR}}H-Slice-unsigned.apk';
 
       - name: Make IPA
         if: inputs.name == 'iOS'

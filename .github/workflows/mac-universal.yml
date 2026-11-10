@@ -19,7 +19,7 @@ on:
 
 env:
   HAXE_VERSION: 4.3.6
-  PROJECT_NAME: ADR-Engine-Reworked
+  PROJECT_NAME: H-Slice
 
 jobs:
   build:
@@ -35,7 +35,8 @@ jobs:
         uses: krdlab/setup-haxe@master
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
-      - name: Select Xcode 16.4
+      - name: Set XCode app
+        if: inputs.os == 'macos-15'
         run: sudo xcode-select -s /Applications/Xcode_16.4.app
 
       - name: Restore Libraries for compilation
@@ -62,21 +63,32 @@ jobs:
           restore-keys: |
             cache-build-${{ inputs.exportPath }}
 
+      - name: Repair Haxelib repository metadata
+        run: haxelib fixrepo
+
+      - name: Set up Python for dependency compatibility patch
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Patch FlxAnimate for HaxeFlixel 6.x
+        run: python .github/scripts/patch_flxanimate.py
+
       - name: Compile (ARM64)
         run: |
           haxelib run lime build mac -D HXCPP_ARM64 
-          mv ./export/release/macos/bin/ADR-Engine-Reworked.app/Contents/MacOS/ADR-Engine-Reworked ./adr-arm64
-          mv ./export/release/macos/bin/ADR-Engine-Reworked.app/Contents/MacOS/lime.ndll ./lime-arm.ndll
+          mv ./export/release/macos/bin/H-Slice.app/Contents/MacOS/H-Slice ./pslice-arm
+          mv ./export/release/macos/bin/H-Slice.app/Contents/MacOS/lime.ndll ./lime-arm.ndll
 
       - name: Compile (x86_64)
         run: |
           haxelib run lime build mac -64 -D HXCPP_M64 
-          mv ./export/release/macos/bin/ADR-Engine-Reworked.app/Contents/MacOS/ADR-Engine-Reworked ./adr-x86_64
-          mv ./export/release/macos/bin/ADR-Engine-Reworked.app/Contents/MacOS/lime.ndll ./lime-x86.ndll
+          mv ./export/release/macos/bin/H-Slice.app/Contents/MacOS/H-Slice ./pslice-x86
+          mv ./export/release/macos/bin/H-Slice.app/Contents/MacOS/lime.ndll ./lime-x86.ndll
       - name: Reflux because yes
         run: |
-          lipo -create -output ./export/release/macos/bin/ADR-Engine-Reworked.app/Contents/MacOS/ADR-Engine-Reworked ./adr-x86_64 ./adr-arm64
-          lipo -create -output ./export/release/macos/bin/ADR-Engine-Reworked.app/Contents/MacOS/lime.ndll ./lime-x86.ndll ./lime-arm.ndll
+          lipo -create -output ./export/release/macos/bin/H-Slice.app/Contents/MacOS/H-Slice ./pslice-x86 ./pslice-arm
+          lipo -create -output ./export/release/macos/bin/H-Slice.app/Contents/MacOS/lime.ndll ./lime-x86.ndll ./lime-arm.ndll
           
       - name: Upload Artifact
         uses: actions/upload-artifact@main
