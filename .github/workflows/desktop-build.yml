@@ -1,0 +1,69 @@
+name: Build ADR Engine Reworked
+
+on:
+  push:
+    branches: [ main, experimental ]
+  pull_request:
+    branches: [ main, experimental ]
+  workflow_dispatch:
+
+jobs:
+  buildLinux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: latest
+      - name: Install Dependencies & Haxelib
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvlc-dev libvlccore-dev ffmpeg
+          haxelib setup ~/haxelib
+          haxelib install hxcpp --quiet
+          haxe -cp ./setup -D analyzer-optimize -main Main --interp
+      - name: Compile
+        run: haxelib run lime build Project.xml linux --app-version="0.0.1"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ADR-Engine-Reworked_0.0.1_linux
+          path: export/release/linux/bin
+
+  buildWindows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: latest
+      - name: Install Haxelib
+        run: |
+          haxelib setup C:/haxelib
+          haxelib install hxcpp --quiet
+          haxe -cp ./setup -D analyzer-optimize -main Main --interp
+        shell: cmd
+      - name: Compile
+        run: haxelib run lime build Project.xml windows --app-version="0.0.1"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ADR-Engine-Reworked_0.0.1_windows
+          path: export/release/windows/bin
+
+  buildMac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: latest
+      - name: Install Haxelib
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install hxcpp --quiet
+          haxe -cp ./setup -D analyzer-optimize -main Main --interp
+      - name: Compile
+        run: haxelib run lime build Project.xml mac --app-version="0.0.1"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ADR-Engine-Reworked_0.0.1_macos
+          path: export/release/macos/bin
